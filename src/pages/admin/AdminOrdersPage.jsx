@@ -3,7 +3,7 @@ import { fetchOrders, updateOrderStatus } from '../../api/orders'
 import { fetchUsers } from '../../api/users'
 import { formatCurrency } from '../../utils/formatters'
 
-const STATUS_OPTIONS = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const STATUS_OPTIONS = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
 
 function AdminOrdersPage() {
   const queryClient = useQueryClient()
@@ -72,7 +72,10 @@ function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {orders.map((order) => {
+                const rawStatus = order.status?.toString().toUpperCase()
+                const normalizedStatus = rawStatus === 'PROCESSING' ? 'PENDING' : rawStatus || 'PENDING'
+                return (
                 <tr key={order.id} className="border-t border-slate-100">
                   <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
                   <td className="px-6 py-4 text-slate-600">
@@ -104,7 +107,7 @@ function AdminOrdersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <select
-                      value={order.status || 'PENDING'}
+                      value={normalizedStatus}
                       onChange={(event) =>
                         statusMutation.mutate({
                           id: order.id,
@@ -121,7 +124,7 @@ function AdminOrdersPage() {
                     </select>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

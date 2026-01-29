@@ -1,11 +1,19 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchCategories } from '../../api/categories'
-import { createProduct, deleteProduct, fetchProducts } from '../../api/products'
+import { createProduct, deleteProduct, fetchProducts, updateProduct } from '../../api/products'
 import { formatCurrency } from '../../utils/formatters'
 
 function AdminProductsPage() {
   const [formState, setFormState] = useState({
+    name: '',
+    categoryId: '',
+    description: '',
+    imageUrl: '',
+    price: '',
+  })
+  const [editingId, setEditingId] = useState(null)
+  const [editingValues, setEditingValues] = useState({
     name: '',
     categoryId: '',
     description: '',
@@ -31,7 +39,16 @@ function AdminProductsPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products', 'admin'] })
+    },
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateProduct(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', 'admin'] })
+      queryClient.refetchQueries({ queryKey: ['products', 'admin'] })
+      setEditingId(null)
+      setEditingValues({ name: '', categoryId: '', description: '', imageUrl: '', price: '' })
     },
   })
 
@@ -41,6 +58,45 @@ function AdminProductsPage() {
 
   const handleChange = (event) => {
     setFormState((prev) => ({ ...prev, [event.target.name]: event.target.value }))
+  }
+
+  const handleEditChange = (event) => {
+    setEditingValues((prev) => ({ ...prev, [event.target.name]: event.target.value }))
+  }
+
+  const startEdit = (product) => {
+    const productId = product.id ?? product.productId
+    setEditingId(productId)
+    setEditingValues({
+      name: product.name ?? '',
+      categoryId: product.categoryId ?? product.category?.id ?? '',
+      description: product.description ?? '',
+      imageUrl: product.imageUrl ?? product.image ?? '',
+      price: product.price ?? '',
+    })
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditingValues({ name: '', categoryId: '', description: '', imageUrl: '', price: '' })
+  }
+
+  const handleUpdate = (productId) => {
+    if (!productId || !editingValues.name || !editingValues.categoryId || !editingValues.price) {
+      return
+    }
+    updateMutation.mutate({
+      id: productId,
+      payload: {
+        name: editingValues.name,
+        categoryId: editingValues.categoryId,
+        description: editingValues.description || 'Updated product details.',
+        imageUrl:
+          editingValues.imageUrl ||
+          'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80',
+        price: Number(editingValues.price),
+      },
+    })
   }
 
   const handleSubmit = (event) => {
@@ -62,6 +118,7 @@ function AdminProductsPage() {
   }
 
   const handleDelete = (id) => {
+    if (!id) return
     deleteMutation.mutate(id)
   }
 
@@ -133,6 +190,11 @@ function AdminProductsPage() {
           {createMutation.error?.message || 'Unable to create product.'}
         </div>
       )}
+      {updateMutation.isError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
+          {updateMutation.error?.message || 'Unable to update product.'}
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
@@ -158,28 +220,124 @@ function AdminProductsPage() {
                 </td>
               </tr>
             ) : (
-              products.map((product) => (
-              <tr key={product.id} className="border-t border-slate-100">
-                <td className="px-6 py-4 font-medium text-slate-900">{product.name}</td>
-                <td className="px-6 py-4 text-slate-600">
-                  {product.category?.name ||
-                    categoriesData.find((category) => category.id === product.categoryId)?.name ||
-                    'Uncategorized'}
-                </td>
-                <td className="px-6 py-4 text-slate-600">
-                  {formatCurrency(product.price)}
-                </td>
-                <td className="px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(product.id)}
-                    className="rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-rose-600 transition hover:bg-rose-50"
-                  >
-                    {deleteMutation.isPending ? 'Removing...' : 'Remove'}
-                  </button>
-                </td>
-              </tr>
-            ))
+              products.map((product) => {
+                const productId = product.id ?? product.productId
+                const categoryName =
+                  product.category?.name ||
+                  categoriesData.find((category) => category.id === product.categoryId)?.name ||
+                  'Uncategorized'
+                const isEditing = editingId === productId
+                return (
+                  <Fragment key={productId}>
+                    <tr className="border-t border-slate-100">
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        {isEditing ? (
+                          <input
+                            name="name"
+                            value={editingValues.name}
+                            onChange={handleEditChange}
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                          />
+                        ) : (
+                          product.name
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {isEditing ? (
+                          <select
+                            name="categoryId"
+                            value={editingValues.categoryId}
+                            onChange={handleEditChange}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                          >
+                            <option value="">Select category</option>
+                            {categoriesData.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          categoryName
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {isEditing ? (
+                          <input
+                            name="price"
+                            type="number"
+                            min="0"
+                            value={editingValues.price}
+                            onChange={handleEditChange}
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                          />
+                        ) : (
+                          formatCurrency(product.price)
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdate(productId)}
+                              className="rounded-full border border-emerald-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-600 transition hover:bg-emerald-50"
+                            >
+                              {updateMutation.isPending ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEdit}
+                              className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startEdit(product)}
+                              className="rounded-full border border-indigo-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-600 transition hover:bg-indigo-50"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(productId)}
+                              className="rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-rose-600 transition hover:bg-rose-50"
+                            >
+                              {deleteMutation.isPending ? 'Removing...' : 'Remove'}
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {isEditing && (
+                      <tr className="border-t border-slate-100 bg-slate-50">
+                        <td colSpan={4} className="px-6 py-4">
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            <input
+                              name="description"
+                              value={editingValues.description}
+                              onChange={handleEditChange}
+                              placeholder="Short description"
+                              className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            />
+                            <input
+                              name="imageUrl"
+                              value={editingValues.imageUrl}
+                              onChange={handleEditChange}
+                              placeholder="Image URL"
+                              className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })
             )}
           </tbody>
         </table>

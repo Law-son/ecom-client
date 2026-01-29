@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchOrders } from '../api/orders'
+import { fetchOrders, updateOrderStatus } from '../api/orders'
 import { fetchProducts } from '../api/products'
 import useSessionStore from '../store/sessionStore'
 import { formatCurrency } from '../utils/formatters'
@@ -8,10 +8,17 @@ import { formatCurrency } from '../utils/formatters'
 function OrdersPage() {
   const { user } = useSessionStore()
   const userId = user?.id || user?.userId
+  const queryClient = useQueryClient()
   const { data: ordersData, isLoading, isError, error } = useQuery({
     queryKey: ['orders', userId],
     queryFn: () => fetchOrders({ userId }),
     enabled: Boolean(userId),
+  })
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }) => updateOrderStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders', userId] })
+    },
   })
 
   const { data: productsData } = useQuery({
@@ -73,7 +80,11 @@ function OrdersPage() {
       </div>
 
       <div className="space-y-4">
-        {orders.map((order) => (
+        {orders.map((order) => {
+          const status = order.status || 'Pending'
+          const normalizedStatus = status.toString().toLowerCase()
+          const canMarkReceived = normalizedStatus === 'delivered'
+          return (
           <div
             key={order.id}
             className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
@@ -89,9 +100,26 @@ function OrdersPage() {
                   Order {order.id}
                 </h2>
               </div>
-              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
-                {order.status || 'Processing'}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
+                  {status}
+                </span>
+                {canMarkReceived && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      statusMutation.mutate({
+                        id: order.id,
+                        status: 'RECEIVED',
+                      })
+                    }
+                    disabled={statusMutation.isPending}
+                    className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    Mark received
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="mt-4 space-y-2 text-sm text-slate-600">
@@ -123,7 +151,7 @@ function OrdersPage() {
               </span>
             </div>
           </div>
-        ))}
+        )})}
       </div>
     </div>
   )

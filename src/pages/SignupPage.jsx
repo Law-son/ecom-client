@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -22,6 +23,8 @@ const signupSchema = z
 function SignupPage() {
   const navigate = useNavigate()
   const login = useSessionStore((state) => state.login)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const signupMutation = useMutation({
     mutationFn: createUser,
   })
@@ -100,12 +103,22 @@ function SignupPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm font-medium text-slate-700">
               Password
-              <input
-                {...register('password')}
-                type="password"
-                placeholder="••••••••"
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
+              <div className="relative">
+                <input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2 pr-16 text-sm text-slate-900 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 transition hover:text-indigo-600"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
               {errors.password && (
                 <span className="text-xs text-rose-500">{errors.password.message}</span>
               )}
@@ -113,12 +126,22 @@ function SignupPage() {
 
             <label className="grid gap-2 text-sm font-medium text-slate-700">
               Confirm password
-              <input
-                {...register('confirmPassword')}
-                type="password"
-                placeholder="••••••••"
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
+              <div className="relative">
+                <input
+                  {...register('confirmPassword')}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2 pr-16 text-sm text-slate-900 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 transition hover:text-indigo-600"
+                >
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
               {errors.confirmPassword && (
                 <span className="text-xs text-rose-500">
                   {errors.confirmPassword.message}

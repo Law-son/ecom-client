@@ -5,7 +5,7 @@ import { fetchProducts } from '../api/products'
 import ProductCard from '../components/ProductCard'
 import useCartStore from '../store/cartStore'
 
-const pageSize = 6
+const pageSize = 12
 
 const sortOptions = [
   { value: 'featured', label: 'Featured' },
@@ -32,6 +32,8 @@ function CatalogPage() {
       const params = {
         page: page - 1,
         size: pageSize,
+        limit: pageSize,
+        perPage: pageSize,
       }
 
       if (search.trim()) {
@@ -65,7 +67,16 @@ function CatalogPage() {
 
   const totalProducts = useMemo(() => {
     if (!productsData || Array.isArray(productsData)) return normalizedProducts.length
-    return productsData.totalElements || productsData.total || normalizedProducts.length
+    return (
+      productsData.totalElements ||
+      productsData.totalItems ||
+      productsData.total ||
+      productsData.totalCount ||
+      productsData.count ||
+      productsData.meta?.total ||
+      productsData.pagination?.total ||
+      normalizedProducts.length
+    )
   }, [productsData, normalizedProducts.length])
 
   const categoryMap = useMemo(() => {
@@ -81,7 +92,18 @@ function CatalogPage() {
     [categoriesData],
   )
 
-  const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize))
+  const totalPages = useMemo(() => {
+    if (!productsData || Array.isArray(productsData)) {
+      return Math.max(1, Math.ceil(totalProducts / pageSize))
+    }
+    return (
+      productsData.totalPages ||
+      productsData.pageCount ||
+      productsData.meta?.totalPages ||
+      productsData.pagination?.totalPages ||
+      Math.max(1, Math.ceil(totalProducts / pageSize))
+    )
+  }, [productsData, totalProducts])
   const pagedProducts = normalizedProducts.map((product) => ({
     ...product,
     category:

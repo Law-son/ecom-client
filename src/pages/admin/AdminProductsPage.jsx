@@ -55,6 +55,12 @@ function AdminProductsPage() {
   const products = Array.isArray(productsData)
     ? productsData
     : productsData?.content || productsData?.items || []
+  const categoryMap = categoriesData.reduce((acc, category) => {
+    if (category?.id) {
+      acc[category.id] = category.name
+    }
+    return acc
+  }, {})
 
   const handleChange = (event) => {
     setFormState((prev) => ({ ...prev, [event.target.name]: event.target.value }))
@@ -224,7 +230,9 @@ function AdminProductsPage() {
                 const productId = product.id ?? product.productId
                 const categoryName =
                   product.category?.name ||
-                  categoriesData.find((category) => category.id === product.categoryId)?.name ||
+                  categoryMap[product.categoryId] ||
+                  categoryMap[product.category?.id] ||
+                  product.category ||
                   'Uncategorized'
                 const isEditing = editingId === productId
                 return (

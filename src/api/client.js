@@ -7,6 +7,30 @@ const apiClient = axios.create({
   },
 })
 
+const getAuthHeader = () => {
+  try {
+    const raw = localStorage.getItem('ecom-session')
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    const state = parsed?.state ?? parsed
+    const accessToken = state?.accessToken ?? state?.user?.accessToken
+    if (!accessToken) return null
+    const tokenType = state?.tokenType ?? state?.user?.tokenType ?? 'Bearer'
+    return `${tokenType} ${accessToken}`
+  } catch (error) {
+    return null
+  }
+}
+
+apiClient.interceptors.request.use((config) => {
+  const authHeader = getAuthHeader()
+  if (authHeader && !config.headers?.Authorization) {
+    config.headers = config.headers || {}
+    config.headers.Authorization = authHeader
+  }
+  return config
+})
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

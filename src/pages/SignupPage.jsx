@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { loginUser } from '../api/auth'
 import { createUser } from '../api/users'
 import useSessionStore from '../store/sessionStore'
 
@@ -41,17 +42,24 @@ function SignupPage() {
   })
 
   const onSubmit = async (values) => {
-    const user = await signupMutation.mutateAsync({
+    const createdUser = await signupMutation.mutateAsync({
       fullName: values.fullName,
       email: values.email,
       password: values.password,
       role: values.role,
     })
-    const rawRole = user?.role || values.role
+    const authUser = createdUser?.accessToken
+      ? createdUser
+      : await loginUser({ email: values.email, password: values.password })
+    const rawRole = authUser?.role || createdUser?.role || values.role
     const normalizedRole = rawRole.toString().toLowerCase()
     const role = normalizedRole === 'admin' ? 'admin' : 'customer'
-    const normalizedUser = { ...user, id: user?.id || user?.userId }
-    login(normalizedUser, role)
+    const normalizedUser = { ...authUser, id: authUser?.id || authUser?.userId }
+    login(normalizedUser, role, {
+      accessToken: authUser?.accessToken,
+      tokenType: authUser?.tokenType,
+      expiresAt: authUser?.expiresAt,
+    })
     navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })
   }
 

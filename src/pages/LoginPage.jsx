@@ -38,7 +38,11 @@ function LoginPage() {
     const normalizedRole = rawRole.toString().toLowerCase()
     const role = normalizedRole === 'admin' ? 'admin' : 'customer'
     const normalizedUser = { ...user, id: user?.id || user?.userId }
-    login(normalizedUser, role)
+    login(normalizedUser, role, {
+      accessToken: user?.accessToken,
+      tokenType: user?.tokenType,
+      expiresAt: user?.expiresAt,
+    })
     navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })
   }
 

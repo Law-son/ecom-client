@@ -9,6 +9,7 @@ import OrdersPage from './pages/OrdersPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ProductDetailsPage from './pages/ProductDetailsPage'
 import SignupPage from './pages/SignupPage'
+import DebugApiPage from './pages/DebugApiPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AdminInventoryPage from './pages/admin/AdminInventoryPage'
@@ -24,6 +25,7 @@ function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
         <Route path="catalog" element={<CatalogPage />} />
+        <Route path="debug-api" element={<DebugApiPage />} />
         <Route path="product/:id" element={<ProductDetailsPage />} />
         <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
           <Route path="cart" element={<CartPage />} />

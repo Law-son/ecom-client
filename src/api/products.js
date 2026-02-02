@@ -11,6 +11,8 @@ const productFields = `
   categoryId
   rating
   reviewCount
+  stockQuantity
+  inStock
   category {
     id
     name

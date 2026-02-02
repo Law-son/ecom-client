@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { Link, useParams } from 'react-router-dom'
 import { z } from 'zod'
-import { fetchInventory } from '../api/inventory'
 import { createReview, fetchReviews } from '../api/reviews'
 import { fetchProductById } from '../api/products'
 import useCartStore from '../store/cartStore'
@@ -38,12 +37,6 @@ function ProductDetailsPage() {
   const { data: reviewsData = [], isLoading: reviewsLoading } = useQuery({
     queryKey: ['reviews', id],
     queryFn: () => fetchReviews({ productId: id }),
-    enabled: Boolean(id),
-  })
-
-  const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
-    queryKey: ['inventory', id],
-    queryFn: () => fetchInventory(id),
     enabled: Boolean(id),
   })
 
@@ -99,8 +92,7 @@ function ProductDetailsPage() {
   const averageRating = reviews.length
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : product.rating || '0.0'
-  const stockQuantity = inventoryData?.quantity ?? inventoryData?.stock
-  const stockStatus = getStockStatus(stockQuantity)
+  const stockStatus = getStockStatus(product)
 
   const onSubmit = (values) => {
     const userId = user?.id || user?.userId
@@ -147,11 +139,9 @@ function ProductDetailsPage() {
                 {averageRating}★ · {reviews.length || product.reviewCount || 0} reviews
               </span>
               <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${
-                  inventoryLoading ? 'bg-slate-100 text-slate-500' : stockStatus.className
-                }`}
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${stockStatus.className}`}
               >
-                {inventoryLoading ? 'Checking stock' : stockStatus.label}
+                {stockStatus.label}
               </span>
             </div>
             <button

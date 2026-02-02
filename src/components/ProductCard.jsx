@@ -1,17 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchInventory } from '../api/inventory'
 import { formatCurrency } from '../utils/formatters'
 import { getStockStatus } from '../utils/stockStatus'
 
 function ProductCard({ product, onAddToCart }) {
-  const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
-    queryKey: ['inventory', product.id],
-    queryFn: () => fetchInventory(product.id),
-    enabled: Boolean(product.id),
-  })
-  const stockQuantity = inventoryData?.quantity ?? inventoryData?.stock
-  const stockStatus = getStockStatus(stockQuantity)
+  const stockStatus = getStockStatus(product)
 
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
@@ -41,11 +33,9 @@ function ProductCard({ product, onAddToCart }) {
               {product.reviewCount ?? 0} reviews
             </p>
             <span
-              className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] ${
-                inventoryLoading ? 'bg-slate-100 text-slate-500' : stockStatus.className
-              }`}
+              className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] ${stockStatus.className}`}
             >
-              {inventoryLoading ? 'Checking stock' : stockStatus.label}
+              {stockStatus.label}
             </span>
           </div>
           <button

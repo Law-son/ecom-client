@@ -3,7 +3,7 @@ import { fetchOrders, updateOrderStatus } from '../../api/orders'
 import { fetchUsers } from '../../api/users'
 import { formatCurrency } from '../../utils/formatters'
 
-const STATUS_OPTIONS = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const STATUS_OPTIONS = ['PENDING', 'RECEIVED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
 
 function AdminOrdersPage() {
   const queryClient = useQueryClient()

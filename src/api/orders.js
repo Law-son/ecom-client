@@ -90,8 +90,44 @@ export const fetchOrders = async (params = {}) => {
   return unwrap(response)
 }
 
+// API: PATCH or PUT /api/orders/{id}/status, body: { status } (PENDING, RECEIVED, SHIPPED, DELIVERED, CANCELLED)
 export const updateOrderStatus = async (id, status) => {
-  const response = await apiClient.patch(`/api/orders/${id}/status`, { status })
-  return unwrap(response)
+  const value =
+    typeof status === 'string' ? status.toUpperCase() : status
+  const url = `/api/orders/${id}/status`
+  const body = { status: value }
+
+  const attempt = async (method) => {
+    const response = await apiClient.request({
+      method,
+      url,
+      data: body,
+    })
+    const data = unwrap(response)
+    // Some APIs return 200 with an error payload
+    if (data && (data.message === 'Forbidden' || data.status === 'error' || data.error)) {
+      const msg = data.message || data.error || 'Forbidden'
+      const err = new Error(msg)
+      err.response = response
+      throw err
+    }
+    return data
+  }
+
+  try {
+    return await attempt('patch')
+  } catch (patchErr) {
+    try {
+      return await attempt('put')
+    } catch (putErr) {
+      const statusCode = patchErr?.response?.status ?? putErr?.response?.status
+      if (statusCode === 403) {
+        throw new Error(
+          'Forbidden (403). Allow the order owner to update status: PATCH /api/orders/:id/status with body { status: "RECEIVED" } must be permitted for the customer who owns the order.',
+        )
+      }
+      throw patchErr
+    }
+  }
 }
 

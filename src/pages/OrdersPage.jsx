@@ -79,6 +79,12 @@ function OrdersPage() {
         </p>
       </div>
 
+      {statusMutation.isError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {statusMutation.error?.message ?? 'Failed to update order status.'}
+        </div>
+      )}
+
       <div className="space-y-4">
         {orders.map((order) => {
           const status = order.status || 'Pending'
@@ -106,18 +112,18 @@ function OrdersPage() {
                 </span>
                 {canMarkReceived && (
                   <button
-                    type="button"
-                    onClick={() =>
-                      statusMutation.mutate({
-                        id: order.id,
-                        status: 'RECEIVED',
-                      })
-                    }
-                    disabled={statusMutation.isPending}
-                    className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    Mark received
-                  </button>
+                      type="button"
+                      onClick={() =>
+                        statusMutation.mutate({
+                          id: order.id,
+                          status: 'RECEIVED',
+                        })
+                      }
+                      disabled={statusMutation.isPending}
+                      className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {statusMutation.isPending ? 'Updating…' : 'Mark received'}
+                    </button>
                 )}
               </div>
             </div>

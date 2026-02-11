@@ -1,10 +1,19 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import useCartStore from '../store/cartStore'
+import useSessionStore from '../store/sessionStore'
 import { formatCurrency } from '../utils/formatters'
 
 function CartPage() {
-  const { items, updateQuantity, removeItem, clear } = useCartStore()
+  const { items, updateQuantity, removeItem, clear, loadCart } = useCartStore()
+  const { user } = useSessionStore()
   const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0)
+
+  useEffect(() => {
+    if (user?.id || user?.userId) {
+      loadCart()
+    }
+  }, [loadCart, user])
 
   if (items.length === 0) {
     return (

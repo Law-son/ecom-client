@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { loginUser } from '../api/auth'
 import { createUser } from '../api/users'
+import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
 
 const signupSchema = z
@@ -24,6 +25,7 @@ const signupSchema = z
 function SignupPage() {
   const navigate = useNavigate()
   const login = useSessionStore((state) => state.login)
+  const syncToServer = useCartStore((state) => state.syncToServer)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const signupMutation = useMutation({
@@ -60,6 +62,7 @@ function SignupPage() {
       tokenType: authUser?.tokenType,
       expiresAt: authUser?.expiresAt,
     })
+    await syncToServer()
     navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })
   }
 

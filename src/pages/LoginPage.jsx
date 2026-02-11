@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { loginUser } from '../api/auth'
+import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
 
 const loginSchema = z.object({
@@ -15,6 +16,7 @@ const loginSchema = z.object({
 function LoginPage() {
   const navigate = useNavigate()
   const login = useSessionStore((state) => state.login)
+  const syncToServer = useCartStore((state) => state.syncToServer)
   const [showPassword, setShowPassword] = useState(false)
   const loginMutation = useMutation({
     mutationFn: loginUser,
@@ -43,6 +45,7 @@ function LoginPage() {
       tokenType: user?.tokenType,
       expiresAt: user?.expiresAt,
     })
+    await syncToServer()
     navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })
   }
 

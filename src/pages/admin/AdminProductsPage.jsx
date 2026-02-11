@@ -250,7 +250,7 @@ function AdminProductsPage() {
                           product.name
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-600">
+                <td className="px-6 py-4 text-slate-600">
                         {isEditing ? (
                           <select
                             name="categoryId"
@@ -268,8 +268,8 @@ function AdminProductsPage() {
                         ) : (
                           categoryName
                         )}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">
+                </td>
+                <td className="px-6 py-4 text-slate-600">
                         {isEditing ? (
                           <input
                             name="price"
@@ -282,8 +282,8 @@ function AdminProductsPage() {
                         ) : (
                           formatCurrency(product.price)
                         )}
-                      </td>
-                      <td className="px-6 py-4">
+                </td>
+                <td className="px-6 py-4">
                         {isEditing ? (
                           <div className="flex items-center gap-2">
                             <button
@@ -310,13 +310,13 @@ function AdminProductsPage() {
                             >
                               Edit
                             </button>
-                            <button
-                              type="button"
+                  <button
+                    type="button"
                               onClick={() => handleDelete(productId)}
-                              className="rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-rose-600 transition hover:bg-rose-50"
-                            >
-                              {deleteMutation.isPending ? 'Removing...' : 'Remove'}
-                            </button>
+                    className="rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-rose-600 transition hover:bg-rose-50"
+                  >
+                    {deleteMutation.isPending ? 'Removing...' : 'Remove'}
+                  </button>
                           </div>
                         )}
                       </td>
@@ -340,8 +340,8 @@ function AdminProductsPage() {
                               className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             />
                           </div>
-                        </td>
-                      </tr>
+                </td>
+              </tr>
                     )}
                   </Fragment>
                 )

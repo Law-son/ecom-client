@@ -73,6 +73,13 @@ export const createOrder = async (payload) => {
  * GET /api/orders - Query: userId, page, size, sortBy, sortDir
  */
 export const fetchOrders = async (params = {}) => {
+  const restParams = {
+    userId: params.userId,
+    page: params.page,
+    size: params.size,
+    sortBy: params.sortBy,
+    sortDir: params.sortDir,
+  }
   if (params.userId) {
     const variables = {
       userId: params.userId,
@@ -87,12 +94,12 @@ export const fetchOrders = async (params = {}) => {
         const data = await graphqlRequest(ordersByUserListQuery, variables)
         return data?.ordersByUser ?? []
       } catch (innerError) {
-        const response = await apiClient.get('/api/orders', { params })
+        const response = await apiClient.get('/api/orders', { params: restParams })
         return unwrap(response)
       }
     }
   }
-  const response = await apiClient.get('/api/orders', { params })
+  const response = await apiClient.get('/api/orders', { params: restParams })
   return unwrap(response)
 }
 
@@ -129,18 +136,27 @@ export const updateOrderStatus = async (id, status) => {
     return data
   }
 
+  const throwIfTerminalError = (err) => {
+    const statusCode = err?.response?.status
+    const message = err?.response?.data?.message || err?.message
+    if (statusCode === 400 && message) {
+      throw new Error(message)
+    }
+    if (statusCode === 403) {
+      throw new Error(
+        'Forbidden (403). Allow the order owner to update status: PATCH /api/orders/:id/status with body { status: "RECEIVED" } must be permitted for the customer who owns the order.',
+      )
+    }
+  }
+
   try {
     return await attempt('patch')
   } catch (patchErr) {
+    throwIfTerminalError(patchErr)
     try {
       return await attempt('put')
     } catch (putErr) {
-      const statusCode = patchErr?.response?.status ?? putErr?.response?.status
-      if (statusCode === 403) {
-        throw new Error(
-          'Forbidden (403). Allow the order owner to update status: PATCH /api/orders/:id/status with body { status: "RECEIVED" } must be permitted for the customer who owns the order.',
-        )
-      }
+      throwIfTerminalError(putErr)
       throw patchErr
     }
   }

@@ -112,18 +112,25 @@ function OrdersPage() {
                 </span>
                 {canMarkReceived && (
                   <button
-                      type="button"
-                      onClick={() =>
-                        statusMutation.mutate({
-                          id: order.id,
-                          status: 'RECEIVED',
-                        })
+                    type="button"
+                    onClick={() => {
+                      if (
+                        !window.confirm(
+                          'Mark this order as received? This action cannot be undone.',
+                        )
+                      ) {
+                        return
                       }
-                      disabled={statusMutation.isPending}
-                      className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {statusMutation.isPending ? 'Updating…' : 'Mark received'}
-                    </button>
+                      statusMutation.mutate({
+                        id: order.id,
+                        status: 'RECEIVED',
+                      })
+                    }}
+                    disabled={statusMutation.isPending}
+                    className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {statusMutation.isPending ? 'Updating…' : 'Mark received'}
+                  </button>
                 )}
               </div>
             </div>

@@ -25,8 +25,12 @@ function AdminOrdersPage() {
   }, {})
   const statusMutation = useMutation({
     mutationFn: ({ id, status }) => updateOrderStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['orders', 'admin'] })
+      if (variables.status === 'CANCELLED') {
+        queryClient.invalidateQueries({ queryKey: ['products'] })
+        queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      }
     },
   })
 
@@ -59,75 +63,115 @@ function AdminOrdersPage() {
           No orders yet. Place a test order to populate the list.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
-              <tr>
-                <th className="px-6 py-4">Order</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Items</th>
-                <th className="px-6 py-4">Total</th>
-                <th className="px-6 py-4">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => {
-                const rawStatus = order.status?.toString().toUpperCase()
-                const normalizedStatus = rawStatus === 'PROCESSING' ? 'PENDING' : rawStatus || 'PENDING'
-                return (
-                <tr key={order.id} className="border-t border-slate-100">
-                  <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {formatDate(order.orderDate)}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {userMap[order.userId]?.fullName ||
-                      userMap[order.userId]?.name ||
-                      order.userId ||
-                      'Customer'}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {(order.items || [])
-                      .map((item) => {
-                        const name =
-                          item.productName ||
-                          item.product?.name ||
-                          item.name ||
-                          item.productTitle ||
-                          'Item'
-                        const quantity = item.quantity || 0
-                        const price = item.priceAtTime ?? 0
-                        return `${name} × ${quantity} @ ${formatCurrency(price)}`
-                      })
-                      .join(', ')}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {formatCurrency(order.totalAmount || 0)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={normalizedStatus}
-                      onChange={(event) =>
-                        statusMutation.mutate({
-                          id: order.id,
-                          status: event.target.value,
-                        })
-                      }
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                    >
-                      {STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+        <>
+          {statusMutation.isError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+              {statusMutation.error?.message ?? 'Failed to update order status.'}
+            </div>
+          )}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
+                <tr>
+                  <th className="px-6 py-4">Order</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Customer</th>
+                  <th className="px-6 py-4">Items</th>
+                  <th className="px-6 py-4">Total</th>
+                  <th className="px-6 py-4">Status</th>
                 </tr>
-              )})}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {orders.map((order) => {
+                  const rawStatus = order.status?.toString().toUpperCase()
+                  const normalizedStatus = rawStatus === 'PROCESSING' ? 'PENDING' : rawStatus || 'PENDING'
+                  const isTerminal = normalizedStatus === 'CANCELLED' || normalizedStatus === 'RECEIVED'
+                  const handleStatusChange = (event) => {
+                    const newStatus = event.target.value
+                    if (newStatus === normalizedStatus) return
+                    if (newStatus === 'CANCELLED') {
+                      if (
+                        !window.confirm(
+                          'Cancel this order? All items will be returned to inventory. This cannot be undone.',
+                        )
+                      ) {
+                        return
+                      }
+                    } else if (newStatus === 'RECEIVED') {
+                      if (
+                        !window.confirm(
+                          'Mark this order as received? This action cannot be undone.',
+                        )
+                      ) {
+                        return
+                      }
+                    }
+                    statusMutation.mutate({ id: order.id, status: newStatus })
+                  }
+                  return (
+                    <tr key={order.id} className="border-t border-slate-100">
+                      <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {formatDate(order.orderDate)}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {userMap[order.userId]?.fullName ||
+                          userMap[order.userId]?.name ||
+                          order.userId ||
+                          'Customer'}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {(order.items || [])
+                          .map((item) => {
+                            const name =
+                              item.productName ||
+                              item.product?.name ||
+                              item.name ||
+                              item.productTitle ||
+                              'Item'
+                            const quantity = item.quantity || 0
+                            const price = item.priceAtTime ?? 0
+                            return `${name} × ${quantity} @ ${formatCurrency(price)}`
+                          })
+                          .join(', ')}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {formatCurrency(order.totalAmount || 0)}
+                      </td>
+                      <td className="px-6 py-4">
+                        {isTerminal ? (
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${
+                              normalizedStatus === 'CANCELLED'
+                                ? 'bg-slate-100 text-slate-600'
+                                : 'bg-emerald-50 text-emerald-600'
+                            }`}
+                            title="This status cannot be changed."
+                          >
+                            {normalizedStatus}
+                          </span>
+                        ) : (
+                          <select
+                            value={normalizedStatus}
+                            onChange={handleStatusChange}
+                            disabled={statusMutation.isPending}
+                            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70"
+                          >
+                            {STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

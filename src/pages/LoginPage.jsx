@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { loginUser } from '../api/auth'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
+import { decodeJwtPayload } from '../utils/jwt'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
@@ -35,15 +36,25 @@ function LoginPage() {
   })
 
   const onSubmit = async (values) => {
-    const user = await loginMutation.mutateAsync(values)
-    const rawRole = user?.role || 'customer'
-    const normalizedRole = rawRole.toString().toLowerCase()
-    const role = normalizedRole === 'admin' ? 'admin' : 'customer'
-    const normalizedUser = { ...user, id: user?.id || user?.userId }
-    login(normalizedUser, role, {
-      accessToken: user?.accessToken,
-      tokenType: user?.tokenType,
-      expiresAt: user?.expiresAt,
+    const token = await loginMutation.mutateAsync(values)
+    const payload = decodeJwtPayload(token)
+    if (!payload) {
+      throw new Error('Invalid token received')
+    }
+
+    const rawRole = payload.role || 'CUSTOMER'
+    const role = rawRole.toString().toUpperCase() === 'ADMIN' ? 'admin' : 'customer'
+    const user = {
+      id: payload.userId,
+      userId: payload.userId,
+      email: payload.sub,
+      fullName: payload.fullName ?? null,
+      lastLogin: payload.lastLogin ?? null,
+    }
+    login(user, role, {
+      accessToken: token,
+      tokenType: 'Bearer',
+      expiresAt: payload.exp ? payload.exp * 1000 : null,
     })
     await syncToServer()
     navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })

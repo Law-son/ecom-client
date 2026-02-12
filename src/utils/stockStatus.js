@@ -1,19 +1,31 @@
 /**
- * Derives stock status from product or explicit inStock/stockQuantity.
- * "In stock" when inStock === true or stockQuantity > 0.
- * "Stock Unavailable" only when inStock === false or stockQuantity === 0.
- * Supports camelCase and snake_case from API; coerce string/number values.
- * @param {object|number} productOrQuantity - Product { inStock, stockQuantity } or numeric quantity (legacy)
- * @param {boolean} [inStock] - Optional; use when first arg is stockQuantity
+ * Derives stock status for display, preferring API-provided fields.
+ *
+ * The API now returns on products:
+ * - stockQuantity: number | null
+ * - inStock: boolean (true when stockQuantity > 0)
+ * - stockStatus: display string for UI, one of:
+ *   "Out of stock", "1 unit in stock", "N units in stock",
+ *   "Few units in stock", "In stock"
+ *
+ * This helper:
+ * - Uses product.stockStatus as the primary label when present
+ * - Falls back to simple labels based on inStock / stockQuantity when needed
+ * - Chooses a badge color based on availability (green when in stock, grey/red when not)
+ *
+ * @param {object|number} productOrQuantity - Product or numeric quantity (legacy)
+ * @param {boolean} [inStock] - Optional; when first arg is stockQuantity
  */
 export const getStockStatus = (productOrQuantity, inStock) => {
   let resolvedInStock
   let resolvedQuantity
+  let apiLabel
 
   if (typeof productOrQuantity === 'object' && productOrQuantity !== null) {
     const p = productOrQuantity
     resolvedInStock = p.inStock ?? p.in_stock
     resolvedQuantity = p.stockQuantity ?? p.stock_quantity ?? p.stock ?? p.quantity
+    apiLabel = p.stockStatus ?? p.stock_status
   } else {
     resolvedQuantity = productOrQuantity
     resolvedInStock = inStock
@@ -24,32 +36,32 @@ export const getStockStatus = (productOrQuantity, inStock) => {
     resolvedInStock === 'true' ||
     resolvedInStock === 1
   const quantityNum = resolvedQuantity != null ? Number(resolvedQuantity) : null
-  const explicitlyUnavailable =
-    resolvedInStock === false ||
-    resolvedInStock === 'false' ||
-    (quantityNum !== null && !Number.isNaN(quantityNum) && quantityNum === 0)
+
   const available =
     inStockBool ||
     (quantityNum !== null && !Number.isNaN(quantityNum) && quantityNum > 0)
-  // When API sends no stock info, default to "In stock" so we don't show "Stock Unavailable" for every product
-  const noInfo = resolvedInStock == null && (resolvedQuantity == null || Number.isNaN(quantityNum))
 
-  if (available || noInfo) {
-    return {
-      label: 'In stock',
-      className: 'bg-emerald-50 text-emerald-600',
-    }
-  }
+  const explicitlyOut =
+    resolvedInStock === false ||
+    resolvedInStock === 'false' ||
+    (quantityNum !== null && !Number.isNaN(quantityNum) && quantityNum === 0)
 
-  if (explicitlyUnavailable) {
-    return {
-      label: 'Stock Unavailable',
-      className: 'bg-slate-100 text-slate-500',
-    }
-  }
+  const noInfo =
+    resolvedInStock == null &&
+    (resolvedQuantity == null || Number.isNaN(quantityNum))
 
-  return {
-    label: 'Stock Unavailable',
-    className: 'bg-slate-100 text-slate-500',
-  }
+  // Prefer the server-provided display string when available
+  const label =
+    apiLabel ||
+    (explicitlyOut
+      ? 'Out of stock'
+      : available || noInfo
+        ? 'In stock'
+        : 'Out of stock')
+
+  const className = available || noInfo
+    ? 'bg-emerald-50 text-emerald-600'
+    : 'bg-rose-50 text-rose-600'
+
+  return { label, className }
 }

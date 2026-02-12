@@ -14,6 +14,7 @@ const productFields = `
   reviewCount
   stockQuantity
   inStock
+  stockStatus
   category {
     id
     name

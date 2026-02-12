@@ -41,5 +41,15 @@ apiClient.interceptors.response.use(
   },
 )
 
+/**
+ * Unwrap ApiResponse envelope: { status, message, data }.
+ * On success returns data; otherwise returns full body for backward compatibility.
+ */
+export const unwrapApiResponse = (response) => {
+  const body = response?.data
+  if (body && body.status === 'success' && 'data' in body) return body.data
+  return body ?? response?.data
+}
+
 export default apiClient
 

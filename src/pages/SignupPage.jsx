@@ -8,6 +8,7 @@ import { loginUser } from '../api/auth'
 import { createUser } from '../api/users'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
+import { decodeJwtPayload } from '../utils/jwt'
 
 const signupSchema = z
   .object({
@@ -44,23 +45,50 @@ function SignupPage() {
   })
 
   const onSubmit = async (values) => {
-    const createdUser = await signupMutation.mutateAsync({
+    await signupMutation.mutateAsync({
       fullName: values.fullName,
       email: values.email,
       password: values.password,
-      role: values.role,
+      role: values.role.toUpperCase(),
     })
-    const authUser = createdUser?.accessToken
-      ? createdUser
-      : await loginUser({ email: values.email, password: values.password })
-    const rawRole = authUser?.role || createdUser?.role || values.role
-    const normalizedRole = rawRole.toString().toLowerCase()
-    const role = normalizedRole === 'admin' ? 'admin' : 'customer'
-    const normalizedUser = { ...authUser, id: authUser?.id || authUser?.userId }
-    login(normalizedUser, role, {
-      accessToken: authUser?.accessToken,
-      tokenType: authUser?.tokenType,
-      expiresAt: authUser?.expiresAt,
+    const data = await loginUser({ email: values.email, password: values.password })
+
+    // data can be object { id, fullName, email, role, accessToken, tokenType, expiresAt } or raw JWT string
+    if (typeof data === 'object' && data !== null && data.accessToken) {
+      const rawRole = data.role || 'CUSTOMER'
+      const role = rawRole.toString().toUpperCase() === 'ADMIN' ? 'admin' : 'customer'
+      const user = {
+        id: data.id ?? data.userId,
+        userId: data.userId ?? data.id,
+        email: data.email ?? data.sub,
+        fullName: data.fullName ?? null,
+        lastLogin: data.lastLogin ?? null,
+      }
+      login(user, role, {
+        accessToken: data.accessToken,
+        tokenType: data.tokenType ?? 'Bearer',
+        expiresAt: data.expiresAt ?? null,
+      })
+      await syncToServer()
+      navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })
+      return
+    }
+
+    const payload = decodeJwtPayload(data)
+    if (!payload) throw new Error('Invalid token received')
+    const rawRole = payload.role || 'CUSTOMER'
+    const role = rawRole.toString().toUpperCase() === 'ADMIN' ? 'admin' : 'customer'
+    const user = {
+      id: payload.userId,
+      userId: payload.userId,
+      email: payload.sub,
+      fullName: payload.fullName ?? null,
+      lastLogin: payload.lastLogin ?? null,
+    }
+    login(user, role, {
+      accessToken: data,
+      tokenType: 'Bearer',
+      expiresAt: payload.exp ? payload.exp * 1000 : null,
     })
     await syncToServer()
     navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })

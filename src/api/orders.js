@@ -1,7 +1,7 @@
-import apiClient from './client'
+import apiClient, { unwrapApiResponse } from './client'
 import { graphqlRequest } from './graphql'
 
-const unwrap = (response) => response?.data?.data ?? response?.data
+const unwrap = (response) => unwrapApiResponse(response) ?? response?.data
 
 const orderFields = `
   id
@@ -47,6 +47,9 @@ const ordersByUserListQuery = `
   }
 `
 
+/**
+ * POST /api/orders - Body: userId, items: [{ productId, quantity }]
+ */
 export const createOrder = async (payload) => {
   try {
     const data = await graphqlRequest(
@@ -66,6 +69,9 @@ export const createOrder = async (payload) => {
   }
 }
 
+/**
+ * GET /api/orders - Query: userId, page, size, sortBy, sortDir
+ */
 export const fetchOrders = async (params = {}) => {
   if (params.userId) {
     const variables = {
@@ -90,7 +96,17 @@ export const fetchOrders = async (params = {}) => {
   return unwrap(response)
 }
 
-// API: PATCH or PUT /api/orders/{id}/status, body: { status } (PENDING, RECEIVED, SHIPPED, DELIVERED, CANCELLED)
+/**
+ * GET /api/orders/{id}
+ */
+export const fetchOrderById = async (id) => {
+  const response = await apiClient.get(`/api/orders/${id}`)
+  return unwrap(response)
+}
+
+/**
+ * PATCH or PUT /api/orders/{id}/status - Body: { status } (PENDING, RECEIVED, SHIPPED, DELIVERED, CANCELLED)
+ */
 export const updateOrderStatus = async (id, status) => {
   const value =
     typeof status === 'string' ? status.toUpperCase() : status
@@ -104,7 +120,6 @@ export const updateOrderStatus = async (id, status) => {
       data: body,
     })
     const data = unwrap(response)
-    // Some APIs return 200 with an error payload
     if (data && (data.message === 'Forbidden' || data.status === 'error' || data.error)) {
       const msg = data.message || data.error || 'Forbidden'
       const err = new Error(msg)
@@ -130,4 +145,3 @@ export const updateOrderStatus = async (id, status) => {
     }
   }
 }
-

@@ -36,11 +36,31 @@ function LoginPage() {
   })
 
   const onSubmit = async (values) => {
-    const token = await loginMutation.mutateAsync(values)
-    const payload = decodeJwtPayload(token)
-    if (!payload) {
-      throw new Error('Invalid token received')
+    const data = await loginMutation.mutateAsync(values)
+
+    // data can be object { id, fullName, email, role, accessToken, tokenType, expiresAt } or raw JWT string
+    if (typeof data === 'object' && data !== null && data.accessToken) {
+      const rawRole = data.role || 'CUSTOMER'
+      const role = rawRole.toString().toUpperCase() === 'ADMIN' ? 'admin' : 'customer'
+      const user = {
+        id: data.id ?? data.userId,
+        userId: data.userId ?? data.id,
+        email: data.email ?? data.sub,
+        fullName: data.fullName ?? null,
+        lastLogin: data.lastLogin ?? null,
+      }
+      login(user, role, {
+        accessToken: data.accessToken,
+        tokenType: data.tokenType ?? 'Bearer',
+        expiresAt: data.expiresAt ?? null,
+      })
+      await syncToServer()
+      navigate(role === 'admin' ? '/admin' : '/catalog', { replace: true })
+      return
     }
+
+    const payload = decodeJwtPayload(data)
+    if (!payload) throw new Error('Invalid token received')
 
     const rawRole = payload.role || 'CUSTOMER'
     const role = rawRole.toString().toUpperCase() === 'ADMIN' ? 'admin' : 'customer'
@@ -52,7 +72,7 @@ function LoginPage() {
       lastLogin: payload.lastLogin ?? null,
     }
     login(user, role, {
-      accessToken: token,
+      accessToken: data,
       tokenType: 'Bearer',
       expiresAt: payload.exp ? payload.exp * 1000 : null,
     })

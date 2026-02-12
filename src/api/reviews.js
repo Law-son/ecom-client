@@ -1,7 +1,8 @@
-import apiClient from './client'
+import apiClient, { unwrapApiResponse } from './client'
 import { graphqlRequest } from './graphql'
 
-const unwrap = (response) => response?.data?.data ?? response?.data
+const unwrap = (response) => unwrapApiResponse(response) ?? response?.data
+
 const reviewFields = `
   id
   rating
@@ -12,6 +13,9 @@ const reviewFields = `
   metadata
 `
 
+/**
+ * GET /api/reviews - Query: productId, userId
+ */
 export const fetchReviews = async (params = {}) => {
   if (params.productId) {
     try {
@@ -28,13 +32,18 @@ export const fetchReviews = async (params = {}) => {
       return data?.reviewsByProduct ?? []
     } catch (error) {
       const response = await apiClient.get('/api/reviews', { params })
-      return unwrap(response)
+      const data = unwrap(response)
+      return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
     }
   }
   const response = await apiClient.get('/api/reviews', { params })
-  return unwrap(response)
+  const data = unwrap(response)
+  return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
 }
 
+/**
+ * POST /api/reviews - Body: userId, productId, rating, comment, metadata
+ */
 export const createReview = async (payload) => {
   try {
     const data = await graphqlRequest(
@@ -53,5 +62,3 @@ export const createReview = async (payload) => {
     return unwrap(response)
   }
 }
-
-

@@ -1,8 +1,11 @@
-import apiClient from './client'
+import apiClient, { unwrapApiResponse } from './client'
 import { graphqlRequest } from './graphql'
 
-const unwrap = (response) => response?.data?.data ?? response?.data
+const unwrap = (response) => unwrapApiResponse(response) ?? response?.data
 
+/**
+ * GET /api/categories
+ */
 export const fetchCategories = async () => {
   try {
     const data = await graphqlRequest(
@@ -18,10 +21,22 @@ export const fetchCategories = async () => {
     return data?.categories ?? []
   } catch (error) {
     const response = await apiClient.get('/api/categories')
-    return unwrap(response)
+    const data = unwrap(response)
+    return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
   }
 }
 
+/**
+ * GET /api/categories/{id}
+ */
+export const fetchCategoryById = async (id) => {
+  const response = await apiClient.get(`/api/categories/${id}`)
+  return unwrap(response)
+}
+
+/**
+ * POST /api/categories - Body: { name } (admin)
+ */
 export const createCategory = async (payload) => {
   try {
     const data = await graphqlRequest(
@@ -42,14 +57,18 @@ export const createCategory = async (payload) => {
   }
 }
 
+/**
+ * PUT /api/categories/{id} - Body: { name } (admin)
+ */
 export const updateCategory = async (id, payload) => {
   const response = await apiClient.put(`/api/categories/${id}`, payload)
   return unwrap(response)
 }
 
+/**
+ * DELETE /api/categories/{id} (admin)
+ */
 export const deleteCategory = async (id) => {
   const response = await apiClient.delete(`/api/categories/${id}`)
   return unwrap(response)
 }
-
-

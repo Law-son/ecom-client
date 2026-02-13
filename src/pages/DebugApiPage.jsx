@@ -37,7 +37,7 @@ function DebugApiPage() {
 
     try {
       // Raw REST: full axios response body
-      const restRes = await apiClient.get('/api/products', { params: { page: 0, size: 5 } })
+      const restRes = await apiClient.get('/api/v1/products', { params: { page: 0, size: 5 } })
       setRestResponse(restRes.data)
 
       // Raw GraphQL: full response (data + errors) from axios
@@ -84,7 +84,7 @@ function DebugApiPage() {
 
       {restResponse && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-800">REST GET /api/products</h2>
+          <h2 className="text-sm font-semibold text-slate-800">REST GET /api/v1/products</h2>
           <pre className="mt-2 max-h-[400px] overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-800">
             {JSON.stringify(restResponse, null, 2)}
           </pre>

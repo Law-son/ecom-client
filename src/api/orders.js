@@ -48,7 +48,7 @@ const ordersByUserListQuery = `
 `
 
 /**
- * POST /api/orders - Body: userId, items: [{ productId, quantity }]
+ * POST /api/v1/orders - Body: userId, items: [{ productId, quantity }]
  */
 export const createOrder = async (payload) => {
   try {
@@ -64,13 +64,13 @@ export const createOrder = async (payload) => {
     )
     return data?.createOrder
   } catch (error) {
-    const response = await apiClient.post('/api/orders', payload)
+    const response = await apiClient.post('/api/v1/orders', payload)
     return unwrap(response)
   }
 }
 
 /**
- * GET /api/orders - Query: userId, page, size, sortBy, sortDir
+ * GET /api/v1/orders - Query: userId, page, size, sortBy, sortDir
  */
 export const fetchOrders = async (params = {}) => {
   const restParams = {
@@ -94,30 +94,30 @@ export const fetchOrders = async (params = {}) => {
         const data = await graphqlRequest(ordersByUserListQuery, variables)
         return data?.ordersByUser ?? []
       } catch (innerError) {
-        const response = await apiClient.get('/api/orders', { params: restParams })
+        const response = await apiClient.get('/api/v1/orders', { params: restParams })
         return unwrap(response)
       }
     }
   }
-  const response = await apiClient.get('/api/orders', { params: restParams })
+  const response = await apiClient.get('/api/v1/orders', { params: restParams })
   return unwrap(response)
 }
 
 /**
- * GET /api/orders/{id}
+ * GET /api/v1/orders/{id}
  */
 export const fetchOrderById = async (id) => {
-  const response = await apiClient.get(`/api/orders/${id}`)
+  const response = await apiClient.get(`/api/v1/orders/${id}`)
   return unwrap(response)
 }
 
 /**
- * PATCH or PUT /api/orders/{id}/status - Body: { status } (PENDING, RECEIVED, SHIPPED, DELIVERED, CANCELLED)
+ * PATCH or PUT /api/v1/orders/{id}/status - Body: { status } (PENDING, RECEIVED, SHIPPED, DELIVERED, CANCELLED)
  */
 export const updateOrderStatus = async (id, status) => {
   const value =
     typeof status === 'string' ? status.toUpperCase() : status
-  const url = `/api/orders/${id}/status`
+  const url = `/api/v1/orders/${id}/status`
   const body = { status: value }
 
   const attempt = async (method) => {
@@ -144,7 +144,7 @@ export const updateOrderStatus = async (id, status) => {
     }
     if (statusCode === 403) {
       throw new Error(
-        'Forbidden (403). Allow the order owner to update status: PATCH /api/orders/:id/status with body { status: "RECEIVED" } must be permitted for the customer who owns the order.',
+        'Forbidden (403). Allow the order owner to update status: PATCH /api/v1/orders/:id/status with body { status: "RECEIVED" } must be permitted for the customer who owns the order.',
       )
     }
   }

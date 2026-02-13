@@ -14,7 +14,7 @@ const reviewFields = `
 `
 
 /**
- * GET /api/reviews - Query: productId, userId
+ * GET /api/v1/reviews - Query: productId, userId
  */
 export const fetchReviews = async (params = {}) => {
   if (params.productId) {
@@ -31,18 +31,18 @@ export const fetchReviews = async (params = {}) => {
       )
       return data?.reviewsByProduct ?? []
     } catch (error) {
-      const response = await apiClient.get('/api/reviews', { params })
+      const response = await apiClient.get('/api/v1/reviews', { params })
       const data = unwrap(response)
       return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
     }
   }
-  const response = await apiClient.get('/api/reviews', { params })
+  const response = await apiClient.get('/api/v1/reviews', { params })
   const data = unwrap(response)
   return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
 }
 
 /**
- * POST /api/reviews - Body: userId, productId, rating, comment, metadata
+ * POST /api/v1/reviews - Body: userId, productId, rating, comment, metadata
  */
 export const createReview = async (payload) => {
   try {
@@ -58,7 +58,7 @@ export const createReview = async (payload) => {
     )
     return data?.addReview
   } catch (error) {
-    const response = await apiClient.post('/api/reviews', payload)
+    const response = await apiClient.post('/api/v1/reviews', payload)
     return unwrap(response)
   }
 }

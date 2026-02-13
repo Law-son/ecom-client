@@ -52,14 +52,22 @@ const useCartStore = create((set, get) => ({
       return acc
     }, {})
     await Promise.all(
-      items.map((item) => {
-        const currentQuantity = serverMap[item.id] || 0
-        const nextQuantity = currentQuantity + (item.quantity || 1)
-        if (currentQuantity > 0) {
-          return updateCartItem(item.id, { quantity: nextQuantity })
-        }
-        return addCartItem({ productId: item.id, quantity: nextQuantity })
-      }),
+      items
+        .map((item) => {
+          const currentQuantity = serverMap[item.id] || 0
+          const localQuantity = Math.max(1, item.quantity || 1)
+
+          // Idempotent merge: rerunning sync should not keep increasing quantity.
+          const targetQuantity = Math.max(currentQuantity, localQuantity)
+
+          if (currentQuantity > 0) {
+            if (currentQuantity === targetQuantity) return null
+            return updateCartItem(item.id, { quantity: targetQuantity })
+          }
+
+          return addCartItem({ productId: item.id, quantity: targetQuantity })
+        })
+        .filter(Boolean),
     )
     const updatedCart = await fetchCart()
     set({ items: normalizeCartItems(updatedCart) })

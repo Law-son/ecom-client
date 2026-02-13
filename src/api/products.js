@@ -46,7 +46,7 @@ const productsListQuery = `
 `
 
 /**
- * GET /api/products - Query: categoryId, search, page, size, sortBy, sortDir
+ * GET /api/v1/products - Query: categoryId, search, page, size, sortBy, sortDir
  */
 export const fetchProducts = async (params = {}) => {
   const variables = {
@@ -65,23 +65,23 @@ export const fetchProducts = async (params = {}) => {
       const data = await graphqlRequest(productsListQuery, variables)
       return data?.products ?? []
     } catch (innerError) {
-      const response = await apiClient.get('/api/products', { params })
+      const response = await apiClient.get('/api/v1/products', { params })
       return unwrap(response)
     }
   }
 }
 
 /**
- * GET /api/products/all - Returns all products without pagination
+ * GET /api/v1/products/all - Returns all products without pagination
  */
 export const fetchAllProducts = async () => {
-  const response = await apiClient.get('/api/products/all')
+  const response = await apiClient.get('/api/v1/products/all')
   const data = unwrap(response)
   return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
 }
 
 /**
- * GET /api/products/{id}
+ * GET /api/v1/products/{id}
  */
 export const fetchProductById = async (id) => {
   try {
@@ -97,13 +97,13 @@ export const fetchProductById = async (id) => {
     )
     return data?.productById
   } catch (error) {
-    const response = await apiClient.get(`/api/products/${id}`)
+    const response = await apiClient.get(`/api/v1/products/${id}`)
     return unwrap(response)
   }
 }
 
 /**
- * POST /api/products - Body: categoryId, name, description, price, imageUrl (admin)
+ * POST /api/v1/products - Body: categoryId, name, description, price, imageUrl (admin)
  */
 export const createProduct = async (payload) => {
   try {
@@ -119,23 +119,23 @@ export const createProduct = async (payload) => {
     )
     return data?.createProduct
   } catch (error) {
-    const response = await apiClient.post('/api/products', payload)
+    const response = await apiClient.post('/api/v1/products', payload)
     return unwrap(response)
   }
 }
 
 /**
- * PUT /api/products/{id} - Body: categoryId, name, description, price, imageUrl (admin)
+ * PUT /api/v1/products/{id} - Body: categoryId, name, description, price, imageUrl (admin)
  */
 export const updateProduct = async (id, payload) => {
-  const response = await apiClient.put(`/api/products/${id}`, payload)
+  const response = await apiClient.put(`/api/v1/products/${id}`, payload)
   return unwrap(response)
 }
 
 /**
- * DELETE /api/products/{id} (admin)
+ * DELETE /api/v1/products/{id} (admin)
  */
 export const deleteProduct = async (id) => {
-  const response = await apiClient.delete(`/api/products/${id}`)
+  const response = await apiClient.delete(`/api/v1/products/${id}`)
   return unwrap(response)
 }

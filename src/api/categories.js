@@ -4,7 +4,7 @@ import { graphqlRequest } from './graphql'
 const unwrap = (response) => unwrapApiResponse(response) ?? response?.data
 
 /**
- * GET /api/categories
+ * GET /api/v1/categories
  */
 export const fetchCategories = async () => {
   try {
@@ -20,22 +20,22 @@ export const fetchCategories = async () => {
     )
     return data?.categories ?? []
   } catch (error) {
-    const response = await apiClient.get('/api/categories')
+    const response = await apiClient.get('/api/v1/categories')
     const data = unwrap(response)
     return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
   }
 }
 
 /**
- * GET /api/categories/{id}
+ * GET /api/v1/categories/{id}
  */
 export const fetchCategoryById = async (id) => {
-  const response = await apiClient.get(`/api/categories/${id}`)
+  const response = await apiClient.get(`/api/v1/categories/${id}`)
   return unwrap(response)
 }
 
 /**
- * POST /api/categories - Body: { name } (admin)
+ * POST /api/v1/categories - Body: { name } (admin)
  */
 export const createCategory = async (payload) => {
   try {
@@ -52,23 +52,23 @@ export const createCategory = async (payload) => {
     )
     return data?.createCategory
   } catch (error) {
-    const response = await apiClient.post('/api/categories', payload)
+    const response = await apiClient.post('/api/v1/categories', payload)
     return unwrap(response)
   }
 }
 
 /**
- * PUT /api/categories/{id} - Body: { name } (admin)
+ * PUT /api/v1/categories/{id} - Body: { name } (admin)
  */
 export const updateCategory = async (id, payload) => {
-  const response = await apiClient.put(`/api/categories/${id}`, payload)
+  const response = await apiClient.put(`/api/v1/categories/${id}`, payload)
   return unwrap(response)
 }
 
 /**
- * DELETE /api/categories/{id} (admin)
+ * DELETE /api/v1/categories/{id} (admin)
  */
 export const deleteCategory = async (id) => {
-  const response = await apiClient.delete(`/api/categories/${id}`)
+  const response = await apiClient.delete(`/api/v1/categories/${id}`)
   return unwrap(response)
 }

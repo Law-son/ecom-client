@@ -104,6 +104,11 @@ function AdminCategoriesPage() {
           {updateMutation.error?.message || 'Unable to update category.'}
         </div>
       )}
+      {deleteMutation.isError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
+          {deleteMutation.error?.message || 'Unable to remove category.'}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {isLoading ? (

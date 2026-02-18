@@ -201,6 +201,11 @@ function AdminProductsPage() {
           {updateMutation.error?.message || 'Unable to update product.'}
         </div>
       )}
+      {deleteMutation.isError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
+          {deleteMutation.error?.message || 'Unable to remove product.'}
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">

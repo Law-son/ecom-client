@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useParams } from 'react-router-dom'
 import { z } from 'zod'
@@ -17,11 +18,14 @@ const reviewSchema = z.object({
   comment: z.string().min(10, 'Share a few details about your experience.'),
 })
 
+const reviewsPageSize = 6
+
 function ProductDetailsPage() {
   const { id } = useParams()
   const addItem = useCartStore((state) => state.addItem)
   const { user } = useSessionStore()
   const queryClient = useQueryClient()
+  const [reviewsPage, setReviewsPage] = useState(1)
 
   const {
     data: product,
@@ -35,8 +39,15 @@ function ProductDetailsPage() {
   })
 
   const { data: reviewsData = [], isLoading: reviewsLoading } = useQuery({
-    queryKey: ['reviews', id],
-    queryFn: () => fetchReviews({ productId: id }),
+    queryKey: ['reviews', id, reviewsPage],
+    queryFn: () =>
+      fetchReviews({
+        productId: id,
+        page: reviewsPage - 1,
+        size: reviewsPageSize,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      }),
     enabled: Boolean(id),
   })
 
@@ -88,7 +99,21 @@ function ProductDetailsPage() {
     )
   }
 
-  const reviews = Array.isArray(reviewsData) ? reviewsData : reviewsData.items || []
+  const reviews = useMemo(() => {
+    if (!reviewsData) return []
+    if (Array.isArray(reviewsData)) return reviewsData
+    return reviewsData.items || reviewsData.content || []
+  }, [reviewsData])
+  const reviewTotal = useMemo(() => {
+    if (!reviewsData || Array.isArray(reviewsData)) return reviews.length
+    return reviewsData.totalElements ?? reviewsData.total ?? reviews.length
+  }, [reviewsData, reviews.length])
+  const reviewTotalPages = useMemo(() => {
+    if (!reviewsData || Array.isArray(reviewsData)) {
+      return Math.max(1, Math.ceil(reviewTotal / reviewsPageSize))
+    }
+    return reviewsData.totalPages ?? Math.max(1, Math.ceil(reviewTotal / reviewsPageSize))
+  }, [reviewsData, reviewTotal])
   const averageRating = reviews.length
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : product.rating || '0.0'
@@ -110,6 +135,7 @@ function ProductDetailsPage() {
       },
     })
     reset({ name: values.name, rating: 5, title: '', comment: '' })
+    setReviewsPage(1)
   }
 
   return (
@@ -169,7 +195,7 @@ function ProductDetailsPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-slate-900">Customer reviews</h2>
             <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
-              {reviewsLoading ? 'Loading...' : `${reviews.length} new`}
+              {reviewsLoading ? 'Loading...' : `${reviewTotal} total`}
             </span>
           </div>
           {reviewsLoading ? (
@@ -196,6 +222,31 @@ function ProductDetailsPage() {
                   </p>
                 </div>
               ))}
+              <div className="flex items-center justify-between pt-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <span>
+                  Page {reviewsPage} of {reviewTotalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReviewsPage((current) => Math.max(1, current - 1))}
+                    disabled={reviewsPage === 1}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReviewsPage((current) => Math.min(reviewTotalPages, current + 1))
+                    }
+                    disabled={reviewsPage >= reviewTotalPages}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

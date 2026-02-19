@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchCategories } from '../../api/categories'
 import { createProduct, deleteProduct, fetchProducts, updateProduct } from '../../api/products'
@@ -20,10 +20,12 @@ function AdminProductsPage() {
     imageUrl: '',
     price: '',
   })
+  const [page, setPage] = useState(1)
+  const pageSize = 12
   const queryClient = useQueryClient()
   const { data: productsData, isLoading, isError, error } = useQuery({
-    queryKey: ['products', 'admin'],
-    queryFn: () => fetchProducts({ page: 0, size: 100 }),
+    queryKey: ['products', 'admin', page],
+    queryFn: () => fetchProducts({ page: page - 1, size: pageSize }),
   })
   const { data: categoriesData = [] } = useQuery({
     queryKey: ['categories'],
@@ -33,7 +35,6 @@ function AdminProductsPage() {
     mutationFn: createProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', 'admin'] })
-      queryClient.refetchQueries({ queryKey: ['products', 'admin'] })
     },
   })
   const deleteMutation = useMutation({
@@ -46,15 +47,37 @@ function AdminProductsPage() {
     mutationFn: ({ id, payload }) => updateProduct(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', 'admin'] })
-      queryClient.refetchQueries({ queryKey: ['products', 'admin'] })
       setEditingId(null)
       setEditingValues({ name: '', categoryId: '', description: '', imageUrl: '', price: '' })
     },
   })
 
-  const products = Array.isArray(productsData)
-    ? productsData
-    : productsData?.content || productsData?.items || []
+  const products = useMemo(() => {
+    if (!productsData) return []
+    if (Array.isArray(productsData)) return productsData
+    return productsData.content || productsData.items || []
+  }, [productsData])
+  const totalProducts = useMemo(() => {
+    if (!productsData || Array.isArray(productsData)) return products.length
+    return (
+      productsData.totalElements ||
+      productsData.totalItems ||
+      productsData.total ||
+      productsData.totalCount ||
+      productsData.count ||
+      products.length
+    )
+  }, [productsData, products.length])
+  const totalPages = useMemo(() => {
+    if (!productsData || Array.isArray(productsData)) {
+      return Math.max(1, Math.ceil(totalProducts / pageSize))
+    }
+    return (
+      productsData.totalPages ||
+      productsData.pageCount ||
+      Math.max(1, Math.ceil(totalProducts / pageSize))
+    )
+  }, [productsData, totalProducts])
   const categoryMap = categoriesData.reduce((acc, category) => {
     if (category?.id) {
       acc[category.id] = category.name
@@ -121,6 +144,7 @@ function AdminProductsPage() {
         'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80',
     })
     setFormState({ name: '', categoryId: '', description: '', imageUrl: '', price: '' })
+    setPage(1)
   }
 
   const handleDelete = (id) => {
@@ -354,6 +378,33 @@ function AdminProductsPage() {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+        <span>
+          Showing {totalProducts === 0 ? 0 : (page - 1) * pageSize + 1}-
+          {Math.min(page * pageSize, totalProducts)} of {totalProducts}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={page === 1}
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Prev
+          </button>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            disabled={page === totalPages}
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   )

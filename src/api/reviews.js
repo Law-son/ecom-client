@@ -14,31 +14,36 @@ const reviewFields = `
 `
 
 /**
- * GET /api/v1/reviews - Query: productId, userId
+ * GET /api/v1/reviews - Query: productId, userId, page, size, sortBy, sortDir
  */
 export const fetchReviews = async (params = {}) => {
+  const hasPaging =
+    params.page !== undefined ||
+    params.size !== undefined ||
+    params.sortBy !== undefined ||
+    params.sortDir !== undefined
   if (params.productId) {
     try {
-      const data = await graphqlRequest(
-        `
-          query ReviewsByProduct($productId: ID!) {
-            reviewsByProduct(productId: $productId) {
-              ${reviewFields}
+      if (!hasPaging) {
+        const data = await graphqlRequest(
+          `
+            query ReviewsByProduct($productId: ID!) {
+              reviewsByProduct(productId: $productId) {
+                ${reviewFields}
+              }
             }
-          }
-        `,
-        { productId: params.productId },
-      )
-      return data?.reviewsByProduct ?? []
+          `,
+          { productId: params.productId },
+        )
+        return data?.reviewsByProduct ?? []
+      }
     } catch (error) {
       const response = await apiClient.get('/api/v1/reviews', { params })
-      const data = unwrap(response)
-      return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
+      return unwrap(response)
     }
   }
   const response = await apiClient.get('/api/v1/reviews', { params })
-  const data = unwrap(response)
-  return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
+  return unwrap(response)
 }
 
 /**

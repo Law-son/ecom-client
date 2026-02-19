@@ -72,12 +72,12 @@ export const fetchProducts = async (params = {}) => {
 }
 
 /**
- * GET /api/v1/products/all - Returns all products without pagination
+ * GET /api/v1/products/all - Query: page, size, sortBy, sortDir
  */
-export const fetchAllProducts = async () => {
-  const response = await apiClient.get('/api/v1/products/all')
+export const fetchAllProducts = async (params = {}) => {
+  const response = await apiClient.get('/api/v1/products/all', { params })
   const data = unwrap(response)
-  return Array.isArray(data) ? data : data?.items ?? data?.content ?? []
+  return Array.isArray(data) ? data : data?.items ?? data?.content ?? data
 }
 
 /**

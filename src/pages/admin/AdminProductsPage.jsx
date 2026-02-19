@@ -20,12 +20,13 @@ function AdminProductsPage() {
     imageUrl: '',
     price: '',
   })
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 12
   const queryClient = useQueryClient()
   const { data: productsData, isLoading, isError, error } = useQuery({
-    queryKey: ['products', 'admin', page],
-    queryFn: () => fetchProducts({ page: page - 1, size: pageSize }),
+    queryKey: ['products', 'admin', { page, search }],
+    queryFn: () => fetchProducts({ page: page - 1, size: pageSize, search }),
   })
   const { data: categoriesData = [] } = useQuery({
     queryKey: ['categories'],
@@ -159,6 +160,28 @@ function AdminProductsPage() {
         <p className="mt-2 text-sm text-slate-600">
           Add new product listings and keep pricing information up to date.
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Product search
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-slate-900">Find listings fast</h2>
+          </div>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value)
+              setPage(1)
+            }}
+            placeholder="Search products"
+            aria-label="Search products"
+            className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:w-80"
+          />
+        </div>
       </div>
 
       <form

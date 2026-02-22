@@ -5,6 +5,7 @@ import CartPage from './pages/CartPage'
 import CatalogPage from './pages/CatalogPage'
 import CheckoutPage from './pages/CheckoutPage'
 import LoginPage from './pages/LoginPage'
+import OAuth2RedirectPage from './pages/OAuth2RedirectPage'
 import OrdersPage from './pages/OrdersPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ProductDetailsPage from './pages/ProductDetailsPage'
@@ -24,6 +25,7 @@ function App() {
         <Route index element={<Navigate to="/catalog" replace />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
+        <Route path="oauth2/redirect" element={<OAuth2RedirectPage />} />
         <Route path="catalog" element={<CatalogPage />} />
         <Route path="debug-api" element={<DebugApiPage />} />
         <Route path="product/:id" element={<ProductDetailsPage />} />

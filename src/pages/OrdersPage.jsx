@@ -87,6 +87,7 @@ function OrdersPage() {
 
       <div className="space-y-4">
         {orders.map((order) => {
+          console.log('Order object:', order)
           const status = order.status || 'Pending'
           const normalizedStatus = status.toString().toLowerCase()
           const canMarkReceived = normalizedStatus === 'delivered'
@@ -136,23 +137,27 @@ function OrdersPage() {
             </div>
 
             <div className="mt-4 space-y-2 text-sm text-slate-600">
-              {order.items.map((item) => {
-                const product = productMap[item.productId] || {}
-                const name =
-                  item.productName || product.name || item.name || 'Item'
-                const price =
-                  item.priceAtTime ?? product.price ?? item.price ?? 0
-                return (
-                  <div key={item.productId} className="flex items-center justify-between">
-                    <span>
-                      {name} × {item.quantity}
-                    </span>
-                    <span className="font-semibold text-slate-900">
-                      {formatCurrency(price * item.quantity)}
-                    </span>
-                  </div>
-                )
-              })}
+              {(order.items || []).length > 0 ? (
+                order.items.map((item) => {
+                  const product = productMap[item.productId] || {}
+                  const name =
+                    item.productName || product.name || item.name || 'Item'
+                  const price =
+                    item.priceAtTime ?? product.price ?? item.price ?? 0
+                  return (
+                    <div key={item.productId} className="flex items-center justify-between">
+                      <span>
+                        {name} × {item.quantity}
+                      </span>
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency(price * item.quantity)}
+                      </span>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-slate-400">No items in this order</div>
+              )}
             </div>
 
             <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 text-sm">

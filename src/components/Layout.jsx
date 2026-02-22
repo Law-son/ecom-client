@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { logoutUser } from '../api/auth'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
 
@@ -23,13 +24,25 @@ const baseLink =
 
 function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const navigate = useNavigate()
   const { user, role, logout } = useSessionStore()
   const cartCount = useCartStore((state) =>
     state.items.reduce((total, item) => total + item.quantity, 0),
   )
   const normalizedRole = role ? role.toString().toLowerCase() : null
   const showCustomerLinks = !normalizedRole || normalizedRole === 'customer'
-  const showAdminLinks = normalizedRole === 'admin'
+  const showAdminLinks = normalizedRole === 'admin' || normalizedRole === 'staff'
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      logout()
+      navigate('/login', { replace: true })
+    }
+  }
 
   const navClass = ({ isActive }) =>
     `${baseLink} ${isActive ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'}`
@@ -80,7 +93,7 @@ function Layout() {
             {user ? (
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 className="hidden rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-rose-200 hover:text-rose-600 sm:inline-flex"
               >
                 Log out
@@ -160,7 +173,7 @@ function Layout() {
                   <button
                     type="button"
                     onClick={() => {
-                      logout()
+                      handleLogout()
                       setMenuOpen(false)
                     }}
                     className="flex-1 rounded-full border border-rose-200 px-4 py-2 text-center text-sm font-medium text-rose-600 shadow-sm transition hover:bg-rose-50"

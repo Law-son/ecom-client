@@ -4,7 +4,7 @@ import apiClient from './client'
  * POST /api/v1/auth/login
  * Body: { email, password }
  * Response: { status, message, data }
- * data: object { id, fullName, email, role, lastLogin, accessToken, tokenType, expiresAt } or raw JWT string
+ * data: { accessToken, refreshToken, tokenType }
  */
 export const loginUser = async (payload) => {
   const response = await apiClient.post('/api/v1/auth/login', payload)
@@ -16,4 +16,29 @@ export const loginUser = async (payload) => {
   }
 
   return body.data
+}
+
+/**
+ * POST /api/v1/auth/refresh
+ * Body: { refreshToken }
+ * Response: { status, message, data }
+ * data: { accessToken, refreshToken, tokenType }
+ */
+export const refreshAccessToken = async (refreshToken) => {
+  const response = await apiClient.post('/api/v1/auth/refresh', { refreshToken })
+  const body = response?.data
+
+  if (body?.status !== 'success' || body?.data == null) {
+    throw new Error('Token refresh failed')
+  }
+
+  return body.data
+}
+
+/**
+ * POST /api/v1/auth/logout
+ * Requires authentication
+ */
+export const logoutUser = async () => {
+  await apiClient.post('/api/v1/auth/logout')
 }

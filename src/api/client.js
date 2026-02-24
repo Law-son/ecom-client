@@ -52,8 +52,14 @@ apiClient.interceptors.response.use(
         } catch (refreshError) {
           isRefreshing = false
           clearAllTokens()
+          
+          const isRefreshTokenMissing = refreshError?.message?.includes('Refresh token not found')
+          const errorParam = isRefreshTokenMissing 
+            ? 'Session expired. Please log in again.'
+            : 'Authentication failed. Please log in again.'
+          
           if (window.location.pathname !== '/login') {
-            window.location.href = '/login'
+            window.location.href = `/login?error=${encodeURIComponent(errorParam)}`
           }
           return Promise.reject(refreshError)
         }

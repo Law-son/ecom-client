@@ -8,6 +8,7 @@ import { loginUser } from '../api/auth'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
 import { decodeJwtPayload } from '../utils/jwt'
+import { setAccessToken, setRefreshToken } from '../utils/tokenStorage'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
@@ -41,7 +42,6 @@ function LoginPage() {
   const onSubmit = async (values) => {
     const data = await loginMutation.mutateAsync(values)
 
-    // data: { accessToken, refreshToken, tokenType }
     if (!data.accessToken) {
       throw new Error('Invalid response from server')
     }
@@ -61,9 +61,10 @@ function LoginPage() {
       lastLogin: payload.lastLogin ?? null,
     }
 
+    setAccessToken(data.accessToken)
+    setRefreshToken(data.refreshToken)
     login(user, role, {
       accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
       tokenType: data.tokenType ?? 'Bearer',
       expiresAt: payload.exp ? payload.exp * 1000 : null,
     })

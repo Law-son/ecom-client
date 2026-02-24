@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logoutUser } from '../api/auth'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
+import { clearAllTokens } from '../utils/tokenStorage'
 
 const primaryLinks = [
   { to: '/catalog', label: 'Catalog' },
@@ -39,6 +40,7 @@ function Layout() {
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
+      clearAllTokens()
       logout()
       navigate('/login', { replace: true })
     }

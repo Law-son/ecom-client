@@ -8,7 +8,7 @@ import { loginUser } from '../api/auth'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
 import { decodeJwtPayload } from '../utils/jwt'
-import { setAccessToken, setRefreshToken } from '../utils/tokenStorage'
+import { setAccessToken } from '../utils/tokenStorage'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
@@ -62,7 +62,6 @@ function LoginPage() {
     }
 
     setAccessToken(data.accessToken)
-    setRefreshToken(data.refreshToken)
     login(user, role, {
       accessToken: data.accessToken,
       tokenType: data.tokenType ?? 'Bearer',

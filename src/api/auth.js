@@ -12,8 +12,8 @@ export const loginUser = async (payload) => {
   return body.data
 }
 
-export const refreshAccessToken = async (refreshToken) => {
-  const response = await apiClient.post('/api/v1/auth/refresh', { refreshToken })
+export const refreshAccessToken = async () => {
+  const response = await apiClient.post('/api/v1/auth/refresh')
   const body = response?.data
 
   if (body?.status !== 'success' || body?.data == null) {

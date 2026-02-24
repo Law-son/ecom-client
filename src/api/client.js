@@ -1,17 +1,13 @@
 import axios from 'axios'
 import { refreshAccessToken } from './auth'
-import {
-  clearAllTokens,
-  getAccessToken,
-  getRefreshToken,
-  setAccessToken,
-} from '../utils/tokenStorage'
+import { clearAllTokens, getAccessToken, setAccessToken } from '../utils/tokenStorage'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
 let isRefreshing = false
@@ -41,22 +37,12 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config
 
     if (error?.response?.status === 401 && !originalRequest._retry) {
-      const refreshToken = getRefreshToken()
-
-      if (!refreshToken) {
-        clearAllTokens()
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
-        }
-        return Promise.reject(error)
-      }
-
       if (!isRefreshing) {
         isRefreshing = true
         originalRequest._retry = true
 
         try {
-          const data = await refreshAccessToken(refreshToken)
+          const data = await refreshAccessToken()
           setAccessToken(data.accessToken)
           isRefreshing = false
           onRefreshed(data.accessToken)

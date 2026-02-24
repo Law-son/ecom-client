@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import useCartStore from '../store/cartStore'
 import useSessionStore from '../store/sessionStore'
 import { decodeJwtPayload } from '../utils/jwt'
-import { setAccessToken, setRefreshToken } from '../utils/tokenStorage'
+import { setAccessToken } from '../utils/tokenStorage'
 
 function OAuth2RedirectPage() {
   const [searchParams] = useSearchParams()
@@ -13,7 +13,6 @@ function OAuth2RedirectPage() {
 
   useEffect(() => {
     const accessToken = searchParams.get('accessToken')
-    const refreshToken = searchParams.get('refreshToken')
     const error = searchParams.get('error')
 
     if (error) {
@@ -45,7 +44,6 @@ function OAuth2RedirectPage() {
     }
 
     setAccessToken(accessToken)
-    setRefreshToken(refreshToken)
     login(user, role, {
       accessToken,
       tokenType: 'Bearer',

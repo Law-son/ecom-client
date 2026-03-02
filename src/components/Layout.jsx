@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logoutUser } from '../api/auth'
 import useCartStore from '../store/cartStore'
@@ -27,12 +27,17 @@ function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { user, role, logout } = useSessionStore()
-  const cartCount = useCartStore((state) =>
-    state.items.reduce((total, item) => total + item.quantity, 0),
-  )
+  const { items: cartItems, loadCart } = useCartStore()
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
   const normalizedRole = role ? role.toString().toLowerCase() : null
   const showCustomerLinks = !normalizedRole || normalizedRole === 'customer'
   const showAdminLinks = normalizedRole === 'admin' || normalizedRole === 'staff'
+
+  useEffect(() => {
+    if (user) {
+      loadCart().catch(() => {})
+    }
+  }, [user, loadCart])
 
   const handleLogout = async () => {
     try {

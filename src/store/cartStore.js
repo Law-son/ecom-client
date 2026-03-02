@@ -1,17 +1,6 @@
 import { create } from 'zustand'
 import { addCartItem, clearCart, fetchCart, removeCartItem, updateCartItem } from '../api/cart'
-
-const getAccessToken = () => {
-  try {
-    const raw = localStorage.getItem('ecom-session')
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    const state = parsed?.state ?? parsed
-    return state?.accessToken ?? state?.user?.accessToken ?? null
-  } catch (error) {
-    return null
-  }
-}
+import { getAccessToken } from '../utils/tokenStorage'
 
 const normalizeCartItems = (data) => {
   const items = data?.items || data?.cartItems || data?.cart?.items || []

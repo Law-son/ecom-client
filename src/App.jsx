@@ -9,6 +9,7 @@ import OAuth2RedirectPage from './pages/OAuth2RedirectPage'
 import OrdersPage from './pages/OrdersPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ProductDetailsPage from './pages/ProductDetailsPage'
+import ProfilingPage from './pages/ProfilingPage'
 import SignupPage from './pages/SignupPage'
 import DebugApiPage from './pages/DebugApiPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
@@ -41,6 +42,7 @@ function App() {
           <Route path="admin/orders" element={<AdminOrdersPage />} />
           <Route path="admin/inventory" element={<AdminInventoryPage />} />
           <Route path="admin/reviews" element={<AdminReviewsPage />} />
+          <Route path="admin/profiling" element={<ProfilingPage />} />
         </Route>
         <Route path="*" element={<PlaceholderPage title="Page Not Found" description="We could not find the page you requested." />} />
       </Route>

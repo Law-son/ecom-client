@@ -254,6 +254,14 @@ function Layout() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-sm text-slate-500 sm:flex-row lg:px-8">
           <p>© 2026 Smart E-Commerce. All rights reserved.</p>
           <div className="flex items-center gap-3">
+            {showAdminLinks && (
+              <NavLink
+                to="/admin/profiling"
+                className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"
+              >
+                JFR Profiling
+              </NavLink>
+            )}
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
               API: http://localhost:8080
             </span>

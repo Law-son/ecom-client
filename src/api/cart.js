@@ -1,4 +1,5 @@
 import apiClient, { unwrapApiResponse } from './client'
+import { withIdempotency } from '../utils/idempotency'
 
 const unwrap = (response) => unwrapApiResponse(response) ?? response?.data
 
@@ -14,7 +15,7 @@ export const fetchCart = async () => {
  * POST /api/v1/cart/items - Body: productId, quantity
  */
 export const addCartItem = async (payload) => {
-  const response = await apiClient.post('/api/v1/cart/items', payload)
+  const response = await apiClient.post('/api/v1/cart/items', payload, withIdempotency({}))
   return unwrap(response)
 }
 

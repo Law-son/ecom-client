@@ -1,5 +1,6 @@
 import apiClient, { unwrapApiResponse } from './client'
 import { graphqlRequest } from './graphql'
+import { withIdempotency } from '../utils/idempotency'
 
 const unwrap = (response) => unwrapApiResponse(response) ?? response?.data
 
@@ -61,10 +62,11 @@ export const createOrder = async (payload) => {
         }
       `,
       { input: payload },
+      { useIdempotency: true },
     )
     return data?.createOrder
   } catch (error) {
-    const response = await apiClient.post('/api/v1/orders', payload)
+    const response = await apiClient.post('/api/v1/orders', payload, withIdempotency({}))
     return unwrap(response)
   }
 }
